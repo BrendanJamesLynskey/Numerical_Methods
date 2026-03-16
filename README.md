@@ -2,6 +2,10 @@
 
 An interactive single-file HTML application for exploring four core areas of numerical methods with real-time visualisation.
 
+### [Launch App](https://brendanjameslynskey.github.io/Numerical_Methods/)
+
+---
+
 ## Features
 
 ### 1. Root Finding
@@ -32,10 +36,6 @@ An interactive single-file HTML application for exploring four core areas of num
 - Optional display of Lagrange basis functions
 - Runge phenomenon demonstration with adjustable equally-spaced point count on 1/(1+25x^2)
 - Presets: Runge function, sine wave, step function, quadratic
-
-## Usage
-
-Open `index.html` in any modern web browser. No build step, server, or external dependencies required (fonts are loaded from Google Fonts for styling, but the app functions without them).
 
 ### Math Expression Syntax
 
