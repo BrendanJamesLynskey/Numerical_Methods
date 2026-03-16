@@ -1,0 +1,2178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Numerical Methods Visualiser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f13;
+  --surface: #1a1a24;
+  --border: #2a2a3a;
+  --text: #e0e0e8;
+  --muted: #8888a0;
+  --teal: #2dd4bf;
+  --amber: #fbbf24;
+  --rose: #fb7185;
+  --purple: #a78bfa;
+  --blue: #6c8cff;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+header {
+  text-align: center;
+  padding: 24px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #14141c 0%, var(--bg) 100%);
+}
+header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--teal), var(--amber), var(--rose), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+header p { color: var(--muted); margin-top: 5px; font-size: 0.92rem; }
+
+/* Tabs */
+.tab-bar {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 16px 0;
+  background: var(--bg);
+}
+.tab-btn {
+  padding: 10px 22px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.tab-btn:hover { color: var(--text); border-color: #3a3a50; }
+.tab-btn.active { background: var(--surface); color: var(--text); border-color: var(--border); }
+.tab-content { display: none; }
+.tab-content.active { display: flex; }
+
+/* Layout */
+.app-section {
+  gap: 14px;
+  padding: 14px;
+  max-width: 1500px;
+  margin: 0 auto;
+  min-height: calc(100vh - 140px);
+}
+.controls-panel {
+  width: 320px;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.viz-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .app-section { flex-direction: column !important; }
+  .controls-panel { width: 100%; min-width: 0; }
+}
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+.card h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+/* Inputs */
+input[type="text"], input[type="number"], select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input:focus, select:focus { border-color: var(--teal); }
+select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238888a0'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+label.field-label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+.field { margin-bottom: 10px; }
+.field-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.field-row .field { flex: 1; margin-bottom: 0; }
+
+/* Buttons */
+.btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn:hover { border-color: var(--teal); background: rgba(45,212,191,0.08); }
+.btn.active, .btn-primary {
+  background: var(--teal);
+  color: #0f0f13;
+  border-color: var(--teal);
+  font-weight: 600;
+}
+.btn-primary:hover { background: #5eead4; }
+.btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+
+/* Presets */
+.preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.preset-btn {
+  padding: 7px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.76rem;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.preset-btn:hover { border-color: var(--teal); background: rgba(45,212,191,0.08); }
+
+/* Canvas */
+canvas {
+  border-radius: 10px;
+  background: #12121a;
+  display: block;
+  width: 100%;
+  cursor: crosshair;
+}
+
+/* Slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+  border: none;
+  padding: 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--teal);
+  cursor: pointer;
+}
+
+/* Checkbox row */
+.check-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.85rem; }
+.check-row input[type="checkbox"] { accent-color: var(--teal); width: 16px; height: 16px; }
+
+/* Results */
+.result-box {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.result-box .val { color: var(--teal); font-weight: 500; }
+.result-box .err { color: var(--rose); }
+.result-box .label { color: var(--muted); }
+
+/* Method tags */
+.method-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-right: 4px;
+}
+.tag-teal { background: rgba(45,212,191,0.15); color: var(--teal); }
+.tag-amber { background: rgba(251,191,36,0.15); color: var(--amber); }
+.tag-rose { background: rgba(251,113,133,0.15); color: var(--rose); }
+.tag-purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Animation controls */
+.anim-controls { display: flex; gap: 6px; align-items: center; }
+.anim-controls .btn { min-width: 60px; text-align: center; }
+.step-label { font-size: 0.82rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-left: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Numerical Methods Visualiser</h1>
+  <p>Explore root finding, integration, ODE solvers, and interpolation with interactive visualisations</p>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('roots')">Root Finding</button>
+  <button class="tab-btn" onclick="switchTab('integration')">Integration</button>
+  <button class="tab-btn" onclick="switchTab('ode')">ODE Solvers</button>
+  <button class="tab-btn" onclick="switchTab('interp')">Interpolation</button>
+</div>
+
+<!-- ==================== ROOT FINDING ==================== -->
+<div id="tab-roots" class="tab-content active app-section" style="display:flex;">
+  <div class="controls-panel">
+    <div class="card">
+      <h2>Function</h2>
+      <div class="field">
+        <label class="field-label">f(x) =</label>
+        <input type="text" id="rf-func" value="x^3 - x - 2">
+      </div>
+      <div class="preset-grid" style="margin-bottom:10px;">
+        <button class="preset-btn" onclick="setRFPreset('x^3-x-2')">x³ - x - 2</button>
+        <button class="preset-btn" onclick="setRFPreset('cos(x)-x')">cos(x) - x</button>
+        <button class="preset-btn" onclick="setRFPreset('exp(-x)-x')">e⁻ˣ - x</button>
+        <button class="preset-btn" onclick="setRFPreset('x^2-2')">x² - 2</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Method</h2>
+      <div class="field">
+        <select id="rf-method">
+          <option value="bisection">Bisection</option>
+          <option value="newton" selected>Newton-Raphson</option>
+          <option value="secant">Secant</option>
+          <option value="fixedpoint">Fixed-Point Iteration</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">a / x₀</label>
+          <input type="number" id="rf-a" value="1" step="0.1">
+        </div>
+        <div class="field">
+          <label class="field-label">b / x₁</label>
+          <input type="number" id="rf-b" value="2" step="0.1">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Tolerance</label>
+        <input type="number" id="rf-tol" value="1e-8" step="1e-8">
+      </div>
+      <div class="field">
+        <label class="field-label">Max Iterations</label>
+        <input type="number" id="rf-maxiter" value="50" step="1">
+      </div>
+      <div class="field" id="rf-gx-field" style="display:none;">
+        <label class="field-label">g(x) = (for fixed-point)</label>
+        <input type="text" id="rf-gx" value="(x+2)^(1/3)">
+      </div>
+    </div>
+    <div class="card">
+      <h2>Animation</h2>
+      <div class="anim-controls">
+        <button class="btn btn-sm" onclick="rfStep()">Step</button>
+        <button class="btn btn-sm btn-primary" id="rf-play-btn" onclick="rfTogglePlay()">Play</button>
+        <button class="btn btn-sm" onclick="rfReset()">Reset</button>
+        <span class="step-label" id="rf-step-label">Step: 0</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Compare Methods</h2>
+      <button class="btn btn-sm" onclick="rfCompareAll()" style="width:100%;">Run All Methods</button>
+    </div>
+    <div class="card" style="flex:1;min-height:0;">
+      <h2>Iteration Log</h2>
+      <div class="result-box" id="rf-log">Click Step or Play to begin.</div>
+    </div>
+  </div>
+  <div class="viz-panel">
+    <div class="card" style="flex:2;">
+      <h2>Function Plot</h2>
+      <canvas id="rf-canvas" height="400"></canvas>
+    </div>
+    <div class="card" style="flex:1;">
+      <h2>Convergence</h2>
+      <canvas id="rf-conv-canvas" height="200"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== INTEGRATION ==================== -->
+<div id="tab-integration" class="tab-content app-section">
+  <div class="controls-panel">
+    <div class="card">
+      <h2>Function</h2>
+      <div class="field">
+        <label class="field-label">f(x) =</label>
+        <input type="text" id="int-func" value="sin(x)">
+      </div>
+      <div class="preset-grid" style="margin-bottom:10px;">
+        <button class="preset-btn" onclick="setIntPreset('sin(x)',0,'pi')">sin(x) [0,π]</button>
+        <button class="preset-btn" onclick="setIntPreset('exp(-x^2)',-2,2)">e⁻ˣ² [-2,2]</button>
+        <button class="preset-btn" onclick="setIntPreset('1/(1+x^2)',-3,3)">1/(1+x²)</button>
+        <button class="preset-btn" onclick="setIntPreset('x^3-2*x+1',-1,2)">x³-2x+1</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Interval & Panels</h2>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">a</label>
+          <input type="text" id="int-a" value="0">
+        </div>
+        <div class="field">
+          <label class="field-label">b</label>
+          <input type="text" id="int-b" value="pi">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Panels n: <span id="int-n-label">8</span></label>
+        <input type="range" id="int-n" min="1" max="64" value="8">
+      </div>
+    </div>
+    <div class="card">
+      <h2>Method</h2>
+      <div class="field">
+        <select id="int-method">
+          <option value="left">Left Rectangle</option>
+          <option value="right">Right Rectangle</option>
+          <option value="midpoint">Midpoint Rectangle</option>
+          <option value="trapezoid" selected>Trapezoidal</option>
+          <option value="simpson13">Simpson's 1/3</option>
+          <option value="simpson38">Simpson's 3/8</option>
+          <option value="gauss2">Gauss-Legendre (2-pt)</option>
+          <option value="gauss3">Gauss-Legendre (3-pt)</option>
+        </select>
+      </div>
+      <button class="btn btn-sm btn-primary" onclick="intCompute()" style="width:100%;margin-top:8px;">Compute</button>
+    </div>
+    <div class="card">
+      <h2>Convergence Plot</h2>
+      <button class="btn btn-sm" onclick="intConvergence()" style="width:100%;">Show Error vs n (all methods)</button>
+    </div>
+    <div class="card" style="flex:1;min-height:0;">
+      <h2>Results</h2>
+      <div class="result-box" id="int-log">Configure and click Compute.</div>
+    </div>
+  </div>
+  <div class="viz-panel">
+    <div class="card" style="flex:2;">
+      <h2>Integration Visualisation</h2>
+      <canvas id="int-canvas" height="400"></canvas>
+    </div>
+    <div class="card" style="flex:1;">
+      <h2>Error vs n (log-log)</h2>
+      <canvas id="int-conv-canvas" height="200"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ODE SOLVERS ==================== -->
+<div id="tab-ode" class="tab-content app-section">
+  <div class="controls-panel">
+    <div class="card">
+      <h2>ODE: y' = f(t, y)</h2>
+      <div class="field">
+        <label class="field-label">f(t, y) =</label>
+        <input type="text" id="ode-func" value="y">
+      </div>
+      <div class="field">
+        <label class="field-label">Exact y(t) = (optional)</label>
+        <input type="text" id="ode-exact" value="exp(t)">
+      </div>
+      <div class="preset-grid" style="margin-bottom:10px;">
+        <button class="preset-btn" onclick="setODEPreset('y','exp(t)',0,1,0,3)">y' = y</button>
+        <button class="preset-btn" onclick="setODEPreset('-y','exp(-t)',0,1,0,5)">y' = -y</button>
+        <button class="preset-btn" onclick="setODEPreset('y*(1-y)','1/(1+exp(-t))',0,0.5,0,8)">Logistic</button>
+        <button class="preset-btn" onclick="setODEPreset('-sin(t)','cos(t)',0,0,0,10)">y'=-sin(t)</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Initial Conditions & Range</h2>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">t₀</label>
+          <input type="number" id="ode-t0" value="0" step="0.1">
+        </div>
+        <div class="field">
+          <label class="field-label">y₀</label>
+          <input type="number" id="ode-y0" value="1" step="0.1">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">t_end</label>
+          <input type="number" id="ode-tend" value="3" step="0.5">
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Method & Step Size</h2>
+      <div class="field">
+        <select id="ode-method">
+          <option value="euler">Euler</option>
+          <option value="heun">Improved Euler (Heun)</option>
+          <option value="rk4" selected>RK4</option>
+          <option value="rk45">Adaptive RK45</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Step size h: <span id="ode-h-label">0.20</span></label>
+        <input type="range" id="ode-h" min="0.01" max="1.0" step="0.01" value="0.20">
+      </div>
+      <div class="field" id="ode-rk45-tol-field" style="display:none;">
+        <label class="field-label">RK45 Tolerance</label>
+        <input type="number" id="ode-rk45-tol" value="1e-6" step="1e-6">
+      </div>
+    </div>
+    <div class="card">
+      <h2>Animation</h2>
+      <div class="anim-controls">
+        <button class="btn btn-sm" onclick="odeStep()">Step</button>
+        <button class="btn btn-sm btn-primary" id="ode-play-btn" onclick="odeTogglePlay()">Play</button>
+        <button class="btn btn-sm" onclick="odeReset()">Reset</button>
+        <span class="step-label" id="ode-step-label">Step: 0</span>
+      </div>
+    </div>
+    <div class="card" style="flex:1;min-height:0;">
+      <h2>Results</h2>
+      <div class="result-box" id="ode-log">Click Step or Play to begin.</div>
+    </div>
+  </div>
+  <div class="viz-panel">
+    <div class="card" style="flex:2;">
+      <h2>Solution Curve</h2>
+      <canvas id="ode-canvas" height="400"></canvas>
+    </div>
+    <div class="card" style="flex:1;">
+      <h2>Error vs Step</h2>
+      <canvas id="ode-err-canvas" height="200"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== INTERPOLATION ==================== -->
+<div id="tab-interp" class="tab-content app-section">
+  <div class="controls-panel">
+    <div class="card">
+      <h2>Data Points</h2>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;">Click on the canvas to add points. Right-click to remove nearest.</p>
+      <button class="btn btn-sm" onclick="interpClear()" style="width:100%;margin-bottom:8px;">Clear Points</button>
+      <div class="preset-grid">
+        <button class="preset-btn" onclick="interpPresetRunge()">Runge Phenom.</button>
+        <button class="preset-btn" onclick="interpPresetSine()">Sine Wave</button>
+        <button class="preset-btn" onclick="interpPresetStep()">Step Function</button>
+        <button class="preset-btn" onclick="interpPresetQuad()">Quadratic</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Method</h2>
+      <div class="check-row"><input type="checkbox" id="interp-lagrange" checked><label>Lagrange Polynomial</label></div>
+      <div class="check-row"><input type="checkbox" id="interp-newton" checked><label>Newton Divided Diff.</label></div>
+      <div class="check-row"><input type="checkbox" id="interp-spline"><label>Cubic Spline</label></div>
+      <div class="check-row"><input type="checkbox" id="interp-basis"><label>Show Basis Functions</label></div>
+    </div>
+    <div class="card">
+      <h2>Runge Phenomenon Demo</h2>
+      <div class="field">
+        <label class="field-label">Points on 1/(1+25x²): <span id="interp-runge-n-label">7</span></label>
+        <input type="range" id="interp-runge-n" min="3" max="20" value="7">
+      </div>
+      <button class="btn btn-sm" onclick="interpRungeDemo()" style="width:100%;">Show Runge Demo</button>
+    </div>
+    <div class="card" style="flex:1;min-height:0;">
+      <h2>Point Coordinates</h2>
+      <div class="result-box" id="interp-log">No points added yet.</div>
+    </div>
+  </div>
+  <div class="viz-panel">
+    <div class="card" style="flex:1;">
+      <h2>Interpolation Plot</h2>
+      <canvas id="interp-canvas" height="500"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// SAFE MATH EXPRESSION PARSER
+// =====================================================================
+const MathParser = (() => {
+  const FUNCS = {
+    sin: Math.sin, cos: Math.cos, tan: Math.tan,
+    asin: Math.asin, acos: Math.acos, atan: Math.atan,
+    exp: Math.exp, log: Math.log, ln: Math.log,
+    sqrt: Math.sqrt, abs: Math.abs,
+    ceil: Math.ceil, floor: Math.floor,
+    sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh
+  };
+  const CONSTS = { pi: Math.PI, PI: Math.PI, e: Math.E, E: Math.E };
+
+  function tokenize(expr) {
+    const tokens = [];
+    let i = 0;
+    while (i < expr.length) {
+      const ch = expr[i];
+      if (/\s/.test(ch)) { i++; continue; }
+      if (/[0-9.]/.test(ch)) {
+        let num = '';
+        while (i < expr.length && /[0-9.eE+\-]/.test(expr[i])) {
+          if ((expr[i] === '+' || expr[i] === '-') && num.length > 0 && !/[eE]/.test(num[num.length-1])) break;
+          num += expr[i++];
+        }
+        tokens.push({ type: 'num', value: parseFloat(num) });
+        continue;
+      }
+      if (/[a-zA-Z_]/.test(ch)) {
+        let id = '';
+        while (i < expr.length && /[a-zA-Z_0-9]/.test(expr[i])) id += expr[i++];
+        if (FUNCS[id]) tokens.push({ type: 'func', value: id });
+        else if (CONSTS[id] !== undefined) tokens.push({ type: 'num', value: CONSTS[id] });
+        else tokens.push({ type: 'var', value: id });
+        continue;
+      }
+      if ('+-*/^(),'.includes(ch)) { tokens.push({ type: 'op', value: ch }); i++; continue; }
+      i++;
+    }
+    return tokens;
+  }
+
+  function parse(tokens) {
+    let pos = 0;
+    function peek() { return pos < tokens.length ? tokens[pos] : null; }
+    function consume() { return tokens[pos++]; }
+    function expect(type, value) {
+      const t = consume();
+      if (!t || t.type !== type || (value !== undefined && t.value !== value))
+        throw new Error('Parse error');
+      return t;
+    }
+
+    function parseExpr() { return parseAddSub(); }
+
+    function parseAddSub() {
+      let left = parseMulDiv();
+      while (peek() && peek().type === 'op' && (peek().value === '+' || peek().value === '-')) {
+        const op = consume().value;
+        const right = parseMulDiv();
+        left = op === '+' ? { type: 'add', left, right } : { type: 'sub', left, right };
+      }
+      return left;
+    }
+
+    function parseMulDiv() {
+      let left = parsePow();
+      while (peek() && peek().type === 'op' && (peek().value === '*' || peek().value === '/')) {
+        const op = consume().value;
+        const right = parsePow();
+        left = op === '*' ? { type: 'mul', left, right } : { type: 'div', left, right };
+      }
+      return left;
+    }
+
+    function parsePow() {
+      let base = parseUnary();
+      if (peek() && peek().type === 'op' && peek().value === '^') {
+        consume();
+        const exp = parsePow(); // right-associative
+        return { type: 'pow', left: base, right: exp };
+      }
+      return base;
+    }
+
+    function parseUnary() {
+      if (peek() && peek().type === 'op' && peek().value === '-') {
+        consume();
+        return { type: 'neg', child: parseUnary() };
+      }
+      if (peek() && peek().type === 'op' && peek().value === '+') {
+        consume();
+        return parseUnary();
+      }
+      return parseAtom();
+    }
+
+    function parseAtom() {
+      const t = peek();
+      if (!t) throw new Error('Unexpected end');
+      if (t.type === 'num') { consume(); return { type: 'num', value: t.value }; }
+      if (t.type === 'var') { consume(); return { type: 'var', value: t.value }; }
+      if (t.type === 'func') {
+        const name = consume().value;
+        expect('op', '(');
+        const arg = parseExpr();
+        expect('op', ')');
+        return { type: 'func', name, arg };
+      }
+      if (t.type === 'op' && t.value === '(') {
+        consume();
+        const expr = parseExpr();
+        expect('op', ')');
+        return expr;
+      }
+      throw new Error('Unexpected token: ' + t.value);
+    }
+
+    const ast = parseExpr();
+    return ast;
+  }
+
+  function evaluate(ast, vars) {
+    switch (ast.type) {
+      case 'num': return ast.value;
+      case 'var': return vars[ast.value] !== undefined ? vars[ast.value] : 0;
+      case 'neg': return -evaluate(ast.child, vars);
+      case 'add': return evaluate(ast.left, vars) + evaluate(ast.right, vars);
+      case 'sub': return evaluate(ast.left, vars) - evaluate(ast.right, vars);
+      case 'mul': return evaluate(ast.left, vars) * evaluate(ast.right, vars);
+      case 'div': return evaluate(ast.left, vars) / evaluate(ast.right, vars);
+      case 'pow': return Math.pow(evaluate(ast.left, vars), evaluate(ast.right, vars));
+      case 'func': return FUNCS[ast.name](evaluate(ast.arg, vars));
+      default: return 0;
+    }
+  }
+
+  function compile(expr) {
+    const tokens = tokenize(expr);
+    const ast = parse(tokens);
+    return (vars) => evaluate(ast, vars);
+  }
+
+  function evalConst(expr) {
+    try { return compile(expr)({}); } catch(e) { return parseFloat(expr) || 0; }
+  }
+
+  return { compile, evalConst };
+})();
+
+// =====================================================================
+// CANVAS PLOTTING UTILITIES
+// =====================================================================
+function setupCanvas(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, w: rect.width, h: rect.height };
+}
+
+function drawGrid(ctx, w, h, xMin, xMax, yMin, yMax, options = {}) {
+  const { labelX = 'x', labelY = 'y' } = options;
+  ctx.fillStyle = '#12121a';
+  ctx.fillRect(0, 0, w, h);
+
+  const pad = { left: 50, right: 20, top: 20, bottom: 36 };
+  const pw = w - pad.left - pad.right;
+  const ph = h - pad.top - pad.bottom;
+
+  function toPixelX(x) { return pad.left + (x - xMin) / (xMax - xMin) * pw; }
+  function toPixelY(y) { return pad.top + (1 - (y - yMin) / (yMax - yMin)) * ph; }
+
+  // Grid lines
+  ctx.strokeStyle = '#1e1e2a';
+  ctx.lineWidth = 1;
+  const xStep = niceStep(xMax - xMin, 8);
+  const yStep = niceStep(yMax - yMin, 6);
+  ctx.font = '11px JetBrains Mono, monospace';
+  ctx.fillStyle = '#666680';
+  ctx.textAlign = 'center';
+
+  for (let x = Math.ceil(xMin / xStep) * xStep; x <= xMax; x += xStep) {
+    const px = toPixelX(x);
+    ctx.beginPath(); ctx.moveTo(px, pad.top); ctx.lineTo(px, h - pad.bottom); ctx.stroke();
+    ctx.fillText(fmtNum(x), px, h - pad.bottom + 14);
+  }
+  ctx.textAlign = 'right';
+  for (let y = Math.ceil(yMin / yStep) * yStep; y <= yMax; y += yStep) {
+    const py = toPixelY(y);
+    ctx.beginPath(); ctx.moveTo(pad.left, py); ctx.lineTo(w - pad.right, py); ctx.stroke();
+    ctx.fillText(fmtNum(y), pad.left - 6, py + 4);
+  }
+
+  // Axes
+  ctx.strokeStyle = '#3a3a50';
+  ctx.lineWidth = 1.5;
+  if (yMin <= 0 && yMax >= 0) {
+    const y0 = toPixelY(0);
+    ctx.beginPath(); ctx.moveTo(pad.left, y0); ctx.lineTo(w - pad.right, y0); ctx.stroke();
+  }
+  if (xMin <= 0 && xMax >= 0) {
+    const x0 = toPixelX(0);
+    ctx.beginPath(); ctx.moveTo(x0, pad.top); ctx.lineTo(x0, h - pad.bottom); ctx.stroke();
+  }
+
+  // Labels
+  ctx.fillStyle = '#666680';
+  ctx.textAlign = 'center';
+  ctx.font = '12px DM Sans, sans-serif';
+  ctx.fillText(labelX, pad.left + pw / 2, h - 2);
+  ctx.save();
+  ctx.translate(12, pad.top + ph / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(labelY, 0, 0);
+  ctx.restore();
+
+  return { pad, pw, ph, toPixelX, toPixelY };
+}
+
+function niceStep(range, maxTicks) {
+  const rough = range / maxTicks;
+  const pow10 = Math.pow(10, Math.floor(Math.log10(rough)));
+  const f = rough / pow10;
+  let nice;
+  if (f <= 1.5) nice = 1;
+  else if (f <= 3.5) nice = 2;
+  else if (f <= 7.5) nice = 5;
+  else nice = 10;
+  return nice * pow10;
+}
+
+function fmtNum(x) {
+  if (Math.abs(x) < 1e-10) return '0';
+  if (Math.abs(x) >= 100) return x.toFixed(0);
+  if (Math.abs(x) >= 1) return x.toFixed(1);
+  return x.toPrecision(3);
+}
+
+function drawCurve(ctx, toPixelX, toPixelY, fn, xMin, xMax, color, lineWidth = 2, dash = []) {
+  const steps = 500;
+  const dx = (xMax - xMin) / steps;
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  ctx.setLineDash(dash);
+  let started = false;
+  for (let i = 0; i <= steps; i++) {
+    const x = xMin + i * dx;
+    const y = fn(x);
+    if (!isFinite(y) || Math.abs(y) > 1e6) { started = false; continue; }
+    const px = toPixelX(x), py = toPixelY(y);
+    if (!started) { ctx.moveTo(px, py); started = true; }
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// =====================================================================
+// TAB SWITCHING
+// =====================================================================
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => { t.classList.remove('active'); t.style.display = 'none'; });
+  const el = document.getElementById('tab-' + name);
+  el.classList.add('active');
+  el.style.display = 'flex';
+  const tabs = ['roots', 'integration', 'ode', 'interp'];
+  document.querySelectorAll('.tab-btn')[tabs.indexOf(name)].classList.add('active');
+  requestAnimationFrame(() => {
+    if (name === 'roots') rfDraw();
+    if (name === 'integration') intDraw();
+    if (name === 'ode') odeDraw();
+    if (name === 'interp') interpDraw();
+  });
+}
+
+// =====================================================================
+// 1. ROOT FINDING
+// =====================================================================
+let rfState = { iterations: [], stepIdx: 0, playing: false, animId: null };
+
+function getRFFunc() { try { return MathParser.compile(document.getElementById('rf-func').value); } catch(e) { return () => NaN; } }
+function rfF(x) { return getRFFunc()({ x }); }
+
+function numericalDerivative(f, x, h = 1e-7) { return (f(x + h) - f(x - h)) / (2 * h); }
+
+function setRFPreset(expr) {
+  document.getElementById('rf-func').value = expr;
+  rfReset();
+}
+
+function rfComputeAll() {
+  const method = document.getElementById('rf-method').value;
+  const a = parseFloat(document.getElementById('rf-a').value);
+  const b = parseFloat(document.getElementById('rf-b').value);
+  const tol = parseFloat(document.getElementById('rf-tol').value) || 1e-8;
+  const maxIter = parseInt(document.getElementById('rf-maxiter').value) || 50;
+  const f = (x) => rfF(x);
+  let iters = [];
+
+  if (method === 'bisection') {
+    let lo = a, hi = b;
+    for (let i = 0; i < maxIter; i++) {
+      const mid = (lo + hi) / 2;
+      const fmid = f(mid);
+      iters.push({ i, a: lo, b: hi, x: mid, fx: fmid, err: Math.abs(hi - lo) / 2 });
+      if (Math.abs(fmid) < tol || Math.abs(hi - lo) / 2 < tol) break;
+      if (f(lo) * fmid < 0) hi = mid; else lo = mid;
+    }
+  } else if (method === 'newton') {
+    let x = a;
+    for (let i = 0; i < maxIter; i++) {
+      const fx = f(x);
+      const fpx = numericalDerivative(f, x);
+      const err = Math.abs(fx);
+      iters.push({ i, x, fx, fpx, err });
+      if (err < tol) break;
+      if (Math.abs(fpx) < 1e-14) break;
+      x = x - fx / fpx;
+    }
+  } else if (method === 'secant') {
+    let x0 = a, x1 = b;
+    for (let i = 0; i < maxIter; i++) {
+      const f0 = f(x0), f1 = f(x1);
+      const err = Math.abs(f1);
+      iters.push({ i, x0, x1, x: x1, fx: f1, err });
+      if (err < tol) break;
+      const denom = f1 - f0;
+      if (Math.abs(denom) < 1e-14) break;
+      const x2 = x1 - f1 * (x1 - x0) / denom;
+      x0 = x1; x1 = x2;
+    }
+  } else if (method === 'fixedpoint') {
+    let gExpr = document.getElementById('rf-gx').value;
+    let g;
+    try { const gFn = MathParser.compile(gExpr); g = (x) => gFn({ x }); } catch(e) { g = (x) => x; }
+    let x = a;
+    for (let i = 0; i < maxIter; i++) {
+      const gx = g(x);
+      const err = Math.abs(gx - x);
+      iters.push({ i, x, gx, fx: f(x), err });
+      if (err < tol) break;
+      x = gx;
+    }
+  }
+  return iters;
+}
+
+function rfReset() {
+  rfState.iterations = [];
+  rfState.stepIdx = 0;
+  rfState.playing = false;
+  if (rfState.animId) cancelAnimationFrame(rfState.animId);
+  rfState.animId = null;
+  document.getElementById('rf-play-btn').textContent = 'Play';
+  document.getElementById('rf-step-label').textContent = 'Step: 0';
+  document.getElementById('rf-log').textContent = 'Click Step or Play to begin.';
+  rfDraw();
+}
+
+function rfStep() {
+  if (rfState.iterations.length === 0) rfState.iterations = rfComputeAll();
+  if (rfState.stepIdx < rfState.iterations.length) {
+    rfState.stepIdx++;
+    rfDraw();
+    rfUpdateLog();
+  }
+}
+
+function rfTogglePlay() {
+  if (rfState.playing) {
+    rfState.playing = false;
+    document.getElementById('rf-play-btn').textContent = 'Play';
+    if (rfState.animId) cancelAnimationFrame(rfState.animId);
+    return;
+  }
+  if (rfState.iterations.length === 0) rfState.iterations = rfComputeAll();
+  rfState.playing = true;
+  document.getElementById('rf-play-btn').textContent = 'Pause';
+  let lastTime = 0;
+  function animate(time) {
+    if (!rfState.playing) return;
+    if (time - lastTime > 400) {
+      lastTime = time;
+      if (rfState.stepIdx < rfState.iterations.length) {
+        rfState.stepIdx++;
+        rfDraw();
+        rfUpdateLog();
+      } else {
+        rfState.playing = false;
+        document.getElementById('rf-play-btn').textContent = 'Play';
+        return;
+      }
+    }
+    rfState.animId = requestAnimationFrame(animate);
+  }
+  rfState.animId = requestAnimationFrame(animate);
+}
+
+function rfUpdateLog() {
+  const method = document.getElementById('rf-method').value;
+  const iters = rfState.iterations.slice(0, rfState.stepIdx);
+  document.getElementById('rf-step-label').textContent = 'Step: ' + rfState.stepIdx;
+  let html = '';
+  for (const it of iters) {
+    html += `<span class="label">i=${it.i}</span> `;
+    html += `x = <span class="val">${it.x.toFixed(10)}</span> `;
+    html += `f(x) = ${it.fx.toExponential(3)} `;
+    html += `<span class="err">err=${it.err.toExponential(2)}</span>\n`;
+  }
+  if (iters.length > 0) {
+    const last = iters[iters.length - 1];
+    html += `\n<span class="val">Root approx: ${last.x.toFixed(12)}</span>`;
+  }
+  document.getElementById('rf-log').innerHTML = html;
+}
+
+function rfDraw() {
+  const canvas = document.getElementById('rf-canvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  const method = document.getElementById('rf-method').value;
+  const f = (x) => rfF(x);
+
+  // Determine view bounds
+  const a = parseFloat(document.getElementById('rf-a').value) || 0;
+  const b = parseFloat(document.getElementById('rf-b').value) || 2;
+  const xMin = Math.min(a, b) - 1.5;
+  const xMax = Math.max(a, b) + 1.5;
+  let yMin = -3, yMax = 3;
+  // Sample to get y range
+  let yLo = Infinity, yHi = -Infinity;
+  for (let i = 0; i <= 200; i++) {
+    const x = xMin + i * (xMax - xMin) / 200;
+    const y = f(x);
+    if (isFinite(y)) { yLo = Math.min(yLo, y); yHi = Math.max(yHi, y); }
+  }
+  if (isFinite(yLo) && isFinite(yHi)) {
+    const pad = (yHi - yLo) * 0.2 + 0.5;
+    yMin = yLo - pad; yMax = yHi + pad;
+  }
+
+  const g = drawGrid(ctx, w, h, xMin, xMax, yMin, yMax, { labelX: 'x', labelY: 'f(x)' });
+
+  // Clip to plot area
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(g.pad.left, g.pad.top, g.pw, g.ph);
+  ctx.clip();
+
+  // Draw function
+  drawCurve(ctx, g.toPixelX, g.toPixelY, f, xMin, xMax, '#6c8cff', 2.5);
+
+  // Draw iteration marks
+  const iters = rfState.iterations.slice(0, rfState.stepIdx);
+  if (method === 'bisection') {
+    for (let k = 0; k < iters.length; k++) {
+      const it = iters[k];
+      const alpha = 0.3 + 0.7 * (k / Math.max(iters.length - 1, 1));
+      // Draw interval
+      ctx.fillStyle = `rgba(45,212,191,${alpha * 0.1})`;
+      const x1 = g.toPixelX(it.a), x2 = g.toPixelX(it.b);
+      ctx.fillRect(x1, g.pad.top, x2 - x1, g.ph);
+      // Draw midpoint
+      ctx.fillStyle = `rgba(251,191,36,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(g.toPixelX(it.x), g.toPixelY(it.fx), 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (method === 'newton') {
+    for (let k = 0; k < iters.length; k++) {
+      const it = iters[k];
+      const alpha = 0.3 + 0.7 * (k / Math.max(iters.length - 1, 1));
+      // Tangent line
+      const slope = it.fpx;
+      const xNext = it.x - it.fx / slope;
+      ctx.strokeStyle = `rgba(251,113,133,${alpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(g.toPixelX(it.x), g.toPixelY(it.fx));
+      ctx.lineTo(g.toPixelX(xNext), g.toPixelY(0));
+      ctx.stroke();
+      // Vertical line from x to curve
+      ctx.strokeStyle = `rgba(167,139,250,${alpha * 0.5})`;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(g.toPixelX(it.x), g.toPixelY(0));
+      ctx.lineTo(g.toPixelX(it.x), g.toPixelY(it.fx));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Point on curve
+      ctx.fillStyle = `rgba(251,191,36,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(g.toPixelX(it.x), g.toPixelY(it.fx), 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (method === 'secant') {
+    for (let k = 0; k < iters.length; k++) {
+      const it = iters[k];
+      const alpha = 0.3 + 0.7 * (k / Math.max(iters.length - 1, 1));
+      if (it.x0 !== undefined && it.x1 !== undefined) {
+        const f0 = f(it.x0), f1 = f(it.x1);
+        ctx.strokeStyle = `rgba(251,113,133,${alpha})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(g.toPixelX(it.x0), g.toPixelY(f0));
+        ctx.lineTo(g.toPixelX(it.x1), g.toPixelY(f1));
+        ctx.stroke();
+      }
+      ctx.fillStyle = `rgba(251,191,36,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(g.toPixelX(it.x), g.toPixelY(it.fx), 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (method === 'fixedpoint') {
+    // Draw y=x line
+    drawCurve(ctx, g.toPixelX, g.toPixelY, x => x, xMin, xMax, 'rgba(167,139,250,0.4)', 1.5, [5, 5]);
+    // Draw g(x)
+    let gExpr = document.getElementById('rf-gx').value;
+    try {
+      const gFn = MathParser.compile(gExpr);
+      drawCurve(ctx, g.toPixelX, g.toPixelY, x => gFn({ x }), xMin, xMax, '#fb7185', 2);
+    } catch(e) {}
+    // Cobweb
+    for (let k = 0; k < iters.length; k++) {
+      const it = iters[k];
+      const alpha = 0.3 + 0.7 * (k / Math.max(iters.length - 1, 1));
+      ctx.strokeStyle = `rgba(45,212,191,${alpha})`;
+      ctx.lineWidth = 1.5;
+      // vertical from (x, x) to (x, g(x))
+      ctx.beginPath();
+      ctx.moveTo(g.toPixelX(it.x), g.toPixelY(it.x));
+      ctx.lineTo(g.toPixelX(it.x), g.toPixelY(it.gx));
+      ctx.stroke();
+      // horizontal from (x, g(x)) to (g(x), g(x))
+      ctx.beginPath();
+      ctx.moveTo(g.toPixelX(it.x), g.toPixelY(it.gx));
+      ctx.lineTo(g.toPixelX(it.gx), g.toPixelY(it.gx));
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+
+  // Draw convergence plot
+  rfDrawConvergence();
+}
+
+function rfDrawConvergence() {
+  const canvas = document.getElementById('rf-conv-canvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  const iters = rfState.iterations.slice(0, rfState.stepIdx);
+  if (iters.length < 2) {
+    ctx.fillStyle = '#12121a'; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#666680'; ctx.font = '13px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('Run iterations to see convergence', w / 2, h / 2);
+    return;
+  }
+  const errors = iters.map(it => Math.max(it.err, 1e-16));
+  const logErrors = errors.map(e => Math.log10(e));
+  const xMin = 0, xMax = iters.length - 1;
+  const yMin = Math.min(...logErrors) - 1;
+  const yMax = Math.max(...logErrors) + 1;
+  const g = drawGrid(ctx, w, h, xMin, xMax, yMin, yMax, { labelX: 'Iteration', labelY: 'log₁₀(error)' });
+
+  ctx.strokeStyle = '#fbbf24';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < logErrors.length; i++) {
+    const px = g.toPixelX(i), py = g.toPixelY(logErrors[i]);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = '#fbbf24';
+  for (let i = 0; i < logErrors.length; i++) {
+    ctx.beginPath();
+    ctx.arc(g.toPixelX(i), g.toPixelY(logErrors[i]), 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function rfCompareAll() {
+  const f = (x) => rfF(x);
+  const a = parseFloat(document.getElementById('rf-a').value) || 1;
+  const b = parseFloat(document.getElementById('rf-b').value) || 2;
+  const tol = parseFloat(document.getElementById('rf-tol').value) || 1e-8;
+  const maxIter = parseInt(document.getElementById('rf-maxiter').value) || 50;
+
+  const methods = [
+    { name: 'Bisection', color: '#2dd4bf' },
+    { name: 'Newton', color: '#fbbf24' },
+    { name: 'Secant', color: '#fb7185' },
+  ];
+
+  const allErrors = [];
+
+  // Bisection
+  { let lo = a, hi = b, errs = [];
+    for (let i = 0; i < maxIter; i++) {
+      const mid = (lo + hi) / 2; const fm = f(mid);
+      errs.push(Math.max(Math.abs(fm), 1e-16));
+      if (Math.abs(fm) < tol) break;
+      if (f(lo) * fm < 0) hi = mid; else lo = mid;
+    }
+    allErrors.push(errs);
+  }
+  // Newton
+  { let x = a, errs = [];
+    for (let i = 0; i < maxIter; i++) {
+      const fx = f(x); errs.push(Math.max(Math.abs(fx), 1e-16));
+      if (Math.abs(fx) < tol) break;
+      const fp = numericalDerivative(f, x);
+      if (Math.abs(fp) < 1e-14) break;
+      x = x - fx / fp;
+    }
+    allErrors.push(errs);
+  }
+  // Secant
+  { let x0 = a, x1 = b, errs = [];
+    for (let i = 0; i < maxIter; i++) {
+      const f0 = f(x0), f1 = f(x1); errs.push(Math.max(Math.abs(f1), 1e-16));
+      if (Math.abs(f1) < tol) break;
+      const d = f1 - f0; if (Math.abs(d) < 1e-14) break;
+      const x2 = x1 - f1 * (x1 - x0) / d; x0 = x1; x1 = x2;
+    }
+    allErrors.push(errs);
+  }
+
+  // Draw on convergence canvas
+  const canvas = document.getElementById('rf-conv-canvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  const maxLen = Math.max(...allErrors.map(e => e.length));
+  const allLog = allErrors.map(e => e.map(v => Math.log10(v)));
+  let yMin = Infinity, yMax = -Infinity;
+  for (const e of allLog) for (const v of e) { yMin = Math.min(yMin, v); yMax = Math.max(yMax, v); }
+  yMin -= 1; yMax += 1;
+  const g = drawGrid(ctx, w, h, 0, maxLen - 1, yMin, yMax, { labelX: 'Iteration', labelY: 'log₁₀|f(x)|' });
+
+  for (let m = 0; m < allErrors.length; m++) {
+    const errs = allLog[m];
+    ctx.strokeStyle = methods[m].color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < errs.length; i++) {
+      const px = g.toPixelX(i), py = g.toPixelY(errs[i]);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    // Legend
+    ctx.fillStyle = methods[m].color;
+    ctx.font = '11px DM Sans';
+    ctx.textAlign = 'left';
+    ctx.fillText(methods[m].name, g.pad.left + 8, g.pad.top + 14 + m * 16);
+  }
+}
+
+// Show/hide g(x) field
+document.getElementById('rf-method').addEventListener('change', () => {
+  document.getElementById('rf-gx-field').style.display =
+    document.getElementById('rf-method').value === 'fixedpoint' ? 'block' : 'none';
+  rfReset();
+});
+document.getElementById('rf-func').addEventListener('change', rfReset);
+document.getElementById('rf-a').addEventListener('change', rfReset);
+document.getElementById('rf-b').addEventListener('change', rfReset);
+
+// =====================================================================
+// 2. NUMERICAL INTEGRATION
+// =====================================================================
+function getIntFunc() { try { return MathParser.compile(document.getElementById('int-func').value); } catch(e) { return () => NaN; } }
+function intF(x) { return getIntFunc()({ x }); }
+
+function setIntPreset(expr, a, b) {
+  document.getElementById('int-func').value = expr;
+  document.getElementById('int-a').value = a;
+  document.getElementById('int-b').value = b;
+  intCompute();
+}
+
+document.getElementById('int-n').addEventListener('input', () => {
+  document.getElementById('int-n-label').textContent = document.getElementById('int-n').value;
+  intCompute();
+});
+document.getElementById('int-func').addEventListener('change', () => intCompute());
+document.getElementById('int-method').addEventListener('change', () => intCompute());
+
+function integrateMethod(f, a, b, n, method) {
+  const h = (b - a) / n;
+  let result = 0;
+  let shapes = []; // for visualisation
+
+  if (method === 'left') {
+    for (let i = 0; i < n; i++) {
+      const x = a + i * h;
+      const y = f(x);
+      result += y * h;
+      shapes.push({ type: 'rect', x, w: h, y: 0, h: y });
+    }
+  } else if (method === 'right') {
+    for (let i = 0; i < n; i++) {
+      const x = a + (i + 1) * h;
+      const y = f(x);
+      result += y * h;
+      shapes.push({ type: 'rect', x: a + i * h, w: h, y: 0, h: y });
+    }
+  } else if (method === 'midpoint') {
+    for (let i = 0; i < n; i++) {
+      const x = a + (i + 0.5) * h;
+      const y = f(x);
+      result += y * h;
+      shapes.push({ type: 'rect', x: a + i * h, w: h, y: 0, h: y });
+    }
+  } else if (method === 'trapezoid') {
+    for (let i = 0; i < n; i++) {
+      const x0 = a + i * h, x1 = a + (i + 1) * h;
+      const y0 = f(x0), y1 = f(x1);
+      result += (y0 + y1) * h / 2;
+      shapes.push({ type: 'trap', x0, x1, y0, y1 });
+    }
+  } else if (method === 'simpson13') {
+    // Need even n
+    const nn = n % 2 === 0 ? n : n + 1;
+    const hh = (b - a) / nn;
+    for (let i = 0; i < nn; i += 2) {
+      const x0 = a + i * hh, x1 = a + (i + 1) * hh, x2 = a + (i + 2) * hh;
+      const y0 = f(x0), y1 = f(x1), y2 = f(x2);
+      result += (y0 + 4 * y1 + y2) * hh / 3;
+      shapes.push({ type: 'parabola', x0, x1, x2, y0, y1, y2 });
+    }
+  } else if (method === 'simpson38') {
+    const nn = n - (n % 3 === 0 ? 0 : n % 3);
+    const nUse = nn < 3 ? 3 : nn;
+    const hh = (b - a) / nUse;
+    for (let i = 0; i < nUse; i += 3) {
+      const x0 = a + i * hh, x1 = a + (i+1)*hh, x2 = a + (i+2)*hh, x3 = a + (i+3)*hh;
+      const y0 = f(x0), y1 = f(x1), y2 = f(x2), y3 = f(x3);
+      result += (y0 + 3*y1 + 3*y2 + y3) * 3*hh / 8;
+      shapes.push({ type: 'cubic', x0, x3, pts: [{x:x0,y:y0},{x:x1,y:y1},{x:x2,y:y2},{x:x3,y:y3}] });
+    }
+  } else if (method === 'gauss2') {
+    // 2-point Gauss-Legendre per subinterval
+    const pts = [-1/Math.sqrt(3), 1/Math.sqrt(3)];
+    const wts = [1, 1];
+    for (let i = 0; i < n; i++) {
+      const x0 = a + i * h, x1 = a + (i+1) * h;
+      const mid = (x0 + x1) / 2, half = (x1 - x0) / 2;
+      let s = 0;
+      for (let j = 0; j < 2; j++) {
+        s += wts[j] * f(mid + half * pts[j]);
+      }
+      result += s * half;
+      shapes.push({ type: 'gauss', x0, x1, points: pts.map(p => mid + half * p) });
+    }
+  } else if (method === 'gauss3') {
+    const pts = [-Math.sqrt(3/5), 0, Math.sqrt(3/5)];
+    const wts = [5/9, 8/9, 5/9];
+    for (let i = 0; i < n; i++) {
+      const x0 = a + i * h, x1 = a + (i+1) * h;
+      const mid = (x0 + x1) / 2, half = (x1 - x0) / 2;
+      let s = 0;
+      for (let j = 0; j < 3; j++) s += wts[j] * f(mid + half * pts[j]);
+      result += s * half;
+      shapes.push({ type: 'gauss', x0, x1, points: pts.map(p => mid + half * p) });
+    }
+  }
+  return { result, shapes };
+}
+
+function intCompute() {
+  const f = (x) => intF(x);
+  const a = MathParser.evalConst(document.getElementById('int-a').value);
+  const b = MathParser.evalConst(document.getElementById('int-b').value);
+  const n = parseInt(document.getElementById('int-n').value) || 8;
+  const method = document.getElementById('int-method').value;
+
+  const { result, shapes } = integrateMethod(f, a, b, n, method);
+  intState = { shapes, a, b, n, method, result };
+
+  let html = `<span class="label">Method:</span> ${method}\n`;
+  html += `<span class="label">n =</span> ${n}\n`;
+  html += `<span class="label">Result:</span> <span class="val">${result.toFixed(12)}</span>\n`;
+
+  document.getElementById('int-log').innerHTML = html;
+  intDraw();
+}
+
+let intState = { shapes: [], a: 0, b: Math.PI, n: 8, method: 'trapezoid', result: 0 };
+
+function intDraw() {
+  const canvas = document.getElementById('int-canvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  const f = (x) => intF(x);
+  const a = MathParser.evalConst(document.getElementById('int-a').value);
+  const b = MathParser.evalConst(document.getElementById('int-b').value);
+
+  const xMin = a - (b - a) * 0.15;
+  const xMax = b + (b - a) * 0.15;
+  let yLo = Infinity, yHi = -Infinity;
+  for (let i = 0; i <= 200; i++) {
+    const x = xMin + i * (xMax - xMin) / 200;
+    const y = f(x);
+    if (isFinite(y)) { yLo = Math.min(yLo, y); yHi = Math.max(yHi, y); }
+  }
+  const yPad = (yHi - yLo) * 0.2 + 0.5;
+  const yMin = Math.min(0, yLo - yPad);
+  const yMax = yHi + yPad;
+
+  const g = drawGrid(ctx, w, h, xMin, xMax, yMin, yMax, { labelX: 'x', labelY: 'f(x)' });
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(g.pad.left, g.pad.top, g.pw, g.ph);
+  ctx.clip();
+
+  // Draw shapes
+  const shapes = intState.shapes;
+  const method = intState.method;
+  for (const s of shapes) {
+    if (s.type === 'rect') {
+      const px = g.toPixelX(s.x);
+      const py0 = g.toPixelY(0);
+      const pyH = g.toPixelY(s.h);
+      const pw = g.toPixelX(s.x + s.w) - px;
+      ctx.fillStyle = 'rgba(45,212,191,0.2)';
+      ctx.fillRect(px, Math.min(py0, pyH), pw, Math.abs(pyH - py0));
+      ctx.strokeStyle = 'rgba(45,212,191,0.6)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px, Math.min(py0, pyH), pw, Math.abs(pyH - py0));
+    } else if (s.type === 'trap') {
+      ctx.fillStyle = 'rgba(167,139,250,0.2)';
+      ctx.beginPath();
+      ctx.moveTo(g.toPixelX(s.x0), g.toPixelY(0));
+      ctx.lineTo(g.toPixelX(s.x0), g.toPixelY(s.y0));
+      ctx.lineTo(g.toPixelX(s.x1), g.toPixelY(s.y1));
+      ctx.lineTo(g.toPixelX(s.x1), g.toPixelY(0));
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(167,139,250,0.6)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    } else if (s.type === 'parabola') {
+      // Fill under parabola from x0 to x2
+      ctx.fillStyle = 'rgba(251,191,36,0.15)';
+      ctx.beginPath();
+      ctx.moveTo(g.toPixelX(s.x0), g.toPixelY(0));
+      const steps = 30;
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const x = s.x0 + t * (s.x2 - s.x0);
+        // Lagrange interpolation through 3 points
+        const L0 = ((x-s.x1)*(x-s.x2))/((s.x0-s.x1)*(s.x0-s.x2));
+        const L1 = ((x-s.x0)*(x-s.x2))/((s.x1-s.x0)*(s.x1-s.x2));
+        const L2 = ((x-s.x0)*(x-s.x1))/((s.x2-s.x0)*(s.x2-s.x1));
+        const y = s.y0*L0 + s.y1*L1 + s.y2*L2;
+        ctx.lineTo(g.toPixelX(x), g.toPixelY(y));
+      }
+      ctx.lineTo(g.toPixelX(s.x2), g.toPixelY(0));
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(251,191,36,0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const x = s.x0 + t * (s.x2 - s.x0);
+        const L0 = ((x-s.x1)*(x-s.x2))/((s.x0-s.x1)*(s.x0-s.x2));
+        const L1 = ((x-s.x0)*(x-s.x2))/((s.x1-s.x0)*(s.x1-s.x2));
+        const L2 = ((x-s.x0)*(x-s.x1))/((s.x2-s.x0)*(s.x2-s.x1));
+        const y = s.y0*L0 + s.y1*L1 + s.y2*L2;
+        if (i === 0) ctx.moveTo(g.toPixelX(x), g.toPixelY(y));
+        else ctx.lineTo(g.toPixelX(x), g.toPixelY(y));
+      }
+      ctx.stroke();
+    } else if (s.type === 'cubic') {
+      ctx.fillStyle = 'rgba(251,113,133,0.15)';
+      ctx.beginPath();
+      ctx.moveTo(g.toPixelX(s.x0), g.toPixelY(0));
+      const steps = 40;
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const x = s.x0 + t * (s.x3 - s.x0);
+        const y = f(x);
+        ctx.lineTo(g.toPixelX(x), g.toPixelY(y));
+      }
+      ctx.lineTo(g.toPixelX(s.x3), g.toPixelY(0));
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(251,113,133,0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(g.toPixelX(s.x0), g.toPixelY(0));
+      ctx.lineTo(g.toPixelX(s.x0), g.toPixelY(s.pts[0].y));
+      ctx.lineTo(g.toPixelX(s.x3), g.toPixelY(s.pts[3].y));
+      ctx.lineTo(g.toPixelX(s.x3), g.toPixelY(0));
+      ctx.stroke();
+    } else if (s.type === 'gauss') {
+      // Shade subinterval
+      ctx.fillStyle = 'rgba(251,191,36,0.1)';
+      const px0 = g.toPixelX(s.x0), px1 = g.toPixelX(s.x1);
+      ctx.fillRect(px0, g.pad.top, px1 - px0, g.ph);
+      ctx.strokeStyle = 'rgba(251,191,36,0.3)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px0, g.pad.top, px1 - px0, g.ph);
+      // Mark Gauss points
+      for (const gp of s.points) {
+        const y = f(gp);
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(g.toPixelX(gp), g.toPixelY(y), 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  // Draw function curve on top
+  drawCurve(ctx, g.toPixelX, g.toPixelY, f, xMin, xMax, '#6c8cff', 2.5);
+  ctx.restore();
+}
+
+function intConvergence() {
+  const f = (x) => intF(x);
+  const a = MathParser.evalConst(document.getElementById('int-a').value);
+  const b = MathParser.evalConst(document.getElementById('int-b').value);
+
+  // Compute "exact" using Simpson with very high n
+  const exact = integrateMethod(f, a, b, 1024, 'simpson13').result;
+
+  const methods = [
+    { name: 'Left', key: 'left', color: '#fb7185' },
+    { name: 'Trapezoid', key: 'trapezoid', color: '#a78bfa' },
+    { name: "Simpson 1/3", key: 'simpson13', color: '#fbbf24' },
+    { name: 'Gauss-2', key: 'gauss2', color: '#2dd4bf' },
+    { name: 'Gauss-3', key: 'gauss3', color: '#6c8cff' },
+  ];
+
+  const nValues = [2, 4, 6, 8, 12, 16, 24, 32, 48, 64];
+  const allErrors = methods.map(m => {
+    return nValues.map(n => {
+      const r = integrateMethod(f, a, b, n, m.key).result;
+      return Math.max(Math.abs(r - exact), 1e-16);
+    });
+  });
+
+  const canvas = document.getElementById('int-conv-canvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  const logN = nValues.map(n => Math.log10(n));
+  const allLogErr = allErrors.map(e => e.map(v => Math.log10(v)));
+  let yMin = Infinity, yMax = -Infinity;
+  for (const e of allLogErr) for (const v of e) { if (isFinite(v)) { yMin = Math.min(yMin, v); yMax = Math.max(yMax, v); } }
+  yMin -= 0.5; yMax += 0.5;
+  const xMin = Math.min(...logN) - 0.1;
+  const xMax = Math.max(...logN) + 0.1;
+
+  const g = drawGrid(ctx, w, h, xMin, xMax, yMin, yMax, { labelX: 'log₁₀(n)', labelY: 'log₁₀(error)' });
+
+  for (let m = 0; m < methods.length; m++) {
+    ctx.strokeStyle = methods[m].color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i < logN.length; i++) {
+      if (!isFinite(allLogErr[m][i])) continue;
+      const px = g.toPixelX(logN[i]), py = g.toPixelY(allLogErr[m][i]);
+      if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    // dots
+    ctx.fillStyle = methods[m].color;
+    for (let i = 0; i < logN.length; i++) {
+      if (!isFinite(allLogErr[m][i])) continue;
+      ctx.beginPath();
+      ctx.arc(g.toPixelX(logN[i]), g.toPixelY(allLogErr[m][i]), 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // legend
+    ctx.font = '10px DM Sans';
+    ctx.textAlign = 'left';
+    ctx.fillText(methods[m].name, g.pad.left + 8, g.pad.top + 12 + m * 14);
+  }
+}
+
+// =====================================================================
+// 3. ODE SOLVERS
+// =====================================================================
+let odeState = { points: [], exactPts: [], errors: [], stepIdx: 0, playing: false, animId: null, allComputed: false };
+
+function getODEFunc() { try { return MathParser.compile(document.getElementById('ode-func').value); } catch(e) { return () => NaN; } }
+function getODEExact() {
+  const v = document.getElementById('ode-exact').value.trim();
+  if (!v) return null;
+  try { return MathParser.compile(v); } catch(e) { return null; }
+}
+
+function setODEPreset(fExpr, exactExpr, t0, y0, tstart, tend) {
+  document.getElementById('ode-func').value = fExpr;
+  document.getElementById('ode-exact').value = exactExpr;
+  document.getElementById('ode-t0').value = t0;
+  document.getElementById('ode-y0').value = y0;
+  document.getElementById('ode-tend').value = tend;
+  odeReset();
+}
+
+document.getElementById('ode-h').addEventListener('input', () => {
+  document.getElementById('ode-h-label').textContent = parseFloat(document.getElementById('ode-h').value).toFixed(2);
+  odeReset();
+});
+document.getElementById('ode-method').addEventListener('change', () => {
+  const m = document.getElementById('ode-method').value;
+  document.getElementById('ode-rk45-tol-field').style.display = m === 'rk45' ? 'block' : 'none';
+  odeReset();
+});
+document.getElementById('ode-func').addEventListener('change', odeReset);
+document.getElementById('ode-exact').addEventListener('change', odeReset);
+
+function odeComputeAll() {
+  const fFn = getODEFunc();
+  const f = (t, y) => fFn({ t, y, x: t });
+  const method = document.getElementById('ode-method').value;
+  const t0 = parseFloat(document.getElementById('ode-t0').value) || 0;
+  const y0 = parseFloat(document.getElementById('ode-y0').value) || 1;
+  const tend = parseFloat(document.getElementById('ode-tend').value) || 3;
+  const h = parseFloat(document.getElementById('ode-h').value) || 0.2;
+  const exactFn = getODEExact();
+
+  let points = [{ t: t0, y: y0 }];
+  let t = t0, y = y0;
+
+  if (method === 'euler') {
+    while (t < tend - 1e-12) {
+      const hUse = Math.min(h, tend - t);
+      y = y + hUse * f(t, y);
+      t += hUse;
+      points.push({ t, y });
+    }
+  } else if (method === 'heun') {
+    while (t < tend - 1e-12) {
+      const hUse = Math.min(h, tend - t);
+      const k1 = f(t, y);
+      const yPred = y + hUse * k1;
+      const k2 = f(t + hUse, yPred);
+      y = y + hUse * (k1 + k2) / 2;
+      t += hUse;
+      points.push({ t, y });
+    }
+  } else if (method === 'rk4') {
+    while (t < tend - 1e-12) {
+      const hUse = Math.min(h, tend - t);
+      const k1 = f(t, y);
+      const k2 = f(t + hUse/2, y + hUse*k1/2);
+      const k3 = f(t + hUse/2, y + hUse*k2/2);
+      const k4 = f(t + hUse, y + hUse*k3);
+      y = y + hUse * (k1 + 2*k2 + 2*k3 + k4) / 6;
+      t += hUse;
+      points.push({ t, y });
+    }
+  } else if (method === 'rk45') {
+    const tol = parseFloat(document.getElementById('ode-rk45-tol').value) || 1e-6;
+    let hCur = h;
+    let maxSteps = 5000;
+    while (t < tend - 1e-12 && maxSteps-- > 0) {
+      hCur = Math.min(hCur, tend - t);
+      // Dormand-Prince RK45
+      const k1 = f(t, y);
+      const k2 = f(t + hCur/5, y + hCur*k1/5);
+      const k3 = f(t + 3*hCur/10, y + hCur*(3*k1/40 + 9*k2/40));
+      const k4 = f(t + 4*hCur/5, y + hCur*(44*k1/45 - 56*k2/15 + 32*k3/9));
+      const k5 = f(t + 8*hCur/9, y + hCur*(19372*k1/6561 - 25360*k2/2187 + 64448*k3/6561 - 212*k4/729));
+      const k6 = f(t + hCur, y + hCur*(9017*k1/3168 - 355*k2/33 + 46732*k3/5247 + 49*k4/176 - 5103*k5/18656));
+
+      const y5 = y + hCur*(35*k1/384 + 500*k3/1113 + 125*k4/192 - 2187*k5/6784 + 11*k6/84);
+      const k7 = f(t + hCur, y5);
+      const y4 = y + hCur*(5179*k1/57600 + 7571*k3/16695 + 393*k4/640 - 92097*k5/339200 + 187*k6/2100 + k7/40);
+
+      const err = Math.abs(y5 - y4);
+      if (err < tol || hCur < 1e-10) {
+        y = y5;
+        t += hCur;
+        points.push({ t, y });
+        if (err > 0) hCur = hCur * Math.min(2, Math.max(0.2, 0.84 * Math.pow(tol / err, 0.25)));
+      } else {
+        hCur = hCur * Math.max(0.2, 0.84 * Math.pow(tol / err, 0.25));
+      }
+    }
+  }
+
+  // Compute exact
+  let exactPts = [];
+  if (exactFn) {
+    for (let i = 0; i <= 300; i++) {
+      const tt = t0 + i * (tend - t0) / 300;
+      exactPts.push({ t: tt, y: exactFn({ t: tt, x: tt }) });
+    }
+  }
+
+  // Errors
+  let errors = [];
+  if (exactFn) {
+    for (const p of points) {
+      const ex = exactFn({ t: p.t, x: p.t });
+      errors.push({ t: p.t, err: Math.abs(p.y - ex) });
+    }
+  }
+
+  odeState.points = points;
+  odeState.exactPts = exactPts;
+  odeState.errors = errors;
+  odeState.allComputed = true;
+}
+
+function odeReset() {
+  odeState = { points: [], exactPts: [], errors: [], stepIdx: 0, playing: false, animId: null, allComputed: false };
+  document.getElementById('ode-play-btn').textContent = 'Play';
+  document.getElementById('ode-step-label').textContent = 'Step: 0';
+  document.getElementById('ode-log').textContent = 'Click Step or Play to begin.';
+  odeDraw();
+}
+
+function odeStep() {
+  if (!odeState.allComputed) odeComputeAll();
+  if (odeState.stepIdx < odeState.points.length) {
+    odeState.stepIdx++;
+    odeDraw();
+    odeUpdateLog();
+  }
+}
+
+function odeTogglePlay() {
+  if (odeState.playing) {
+    odeState.playing = false;
+    document.getElementById('ode-play-btn').textContent = 'Play';
+    if (odeState.animId) cancelAnimationFrame(odeState.animId);
+    return;
+  }
+  if (!odeState.allComputed) odeComputeAll();
+  odeState.playing = true;
+  document.getElementById('ode-play-btn').textContent = 'Pause';
+  let lastTime = 0;
+  function animate(time) {
+    if (!odeState.playing) return;
+    if (time - lastTime > 100) {
+      lastTime = time;
+      if (odeState.stepIdx < odeState.points.length) {
+        odeState.stepIdx++;
+        odeDraw();
+        odeUpdateLog();
+      } else {
+        odeState.playing = false;
+        document.getElementById('ode-play-btn').textContent = 'Play';
+        return;
+      }
+    }
+    odeState.animId = requestAnimationFrame(animate);
+  }
+  odeState.animId = requestAnimationFrame(animate);
+}
+
+function odeUpdateLog() {
+  document.getElementById('ode-step-label').textContent = 'Step: ' + (odeState.stepIdx - 1);
+  const pts = odeState.points.slice(0, odeState.stepIdx);
+  let html = '';
+  const show = pts.slice(-15); // last 15
+  for (const p of show) {
+    html += `t = <span class="val">${p.t.toFixed(4)}</span>  y = <span class="val">${p.y.toFixed(8)}</span>`;
+    const exactFn = getODEExact();
+    if (exactFn) {
+      const ex = exactFn({ t: p.t, x: p.t });
+      html += `  <span class="err">err=${Math.abs(p.y - ex).toExponential(2)}</span>`;
+    }
+    html += '\n';
+  }
+  document.getElementById('ode-log').innerHTML = html;
+}
+
+function odeDraw() {
+  const canvas = document.getElementById('ode-canvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+
+  const t0 = parseFloat(document.getElementById('ode-t0').value) || 0;
+  const tend = parseFloat(document.getElementById('ode-tend').value) || 3;
+  const pts = odeState.points.slice(0, odeState.stepIdx);
+  const exactPts = odeState.exactPts;
+
+  let allY = pts.map(p => p.y);
+  if (exactPts.length) allY = allY.concat(exactPts.map(p => p.y));
+  let yMin, yMax;
+  if (allY.length > 0) {
+    yMin = Math.min(...allY.filter(isFinite));
+    yMax = Math.max(...allY.filter(isFinite));
+    const pad = (yMax - yMin) * 0.2 + 0.5;
+    yMin -= pad; yMax += pad;
+  } else { yMin = -1; yMax = 3; }
+
+  const g = drawGrid(ctx, w, h, t0 - (tend-t0)*0.05, tend + (tend-t0)*0.05, yMin, yMax, { labelX: 't', labelY: 'y' });
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(g.pad.left, g.pad.top, g.pw, g.ph);
+  ctx.clip();
+
+  // Draw exact solution
+  if (exactPts.length > 0) {
+    ctx.strokeStyle = 'rgba(108,140,255,0.5)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    for (let i = 0; i < exactPts.length; i++) {
+      const px = g.toPixelX(exactPts[i].t), py = g.toPixelY(exactPts[i].y);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw numerical solution
+  if (pts.length > 1) {
+    ctx.strokeStyle = '#2dd4bf';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i = 0; i < pts.length; i++) {
+      const px = g.toPixelX(pts[i].t), py = g.toPixelY(pts[i].y);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+
+  // Draw points
+  for (let i = 0; i < pts.length; i++) {
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(g.toPixelX(pts[i].t), g.toPixelY(pts[i].y), 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Legend
+  ctx.font = '12px DM Sans';
+  ctx.textAlign = 'left';
+  if (exactPts.length) {
+    ctx.fillStyle = 'rgba(108,140,255,0.8)';
+    ctx.fillText('--- Exact', g.pad.left + 10, g.pad.top + 18);
+  }
+  ctx.fillStyle = '#2dd4bf';
+  ctx.fillText('--- Numerical', g.pad.left + 10, g.pad.top + 34);
+
+  ctx.restore();
+
+  // Error plot
+  odeDrawError();
+}
+
+function odeDrawError() {
+  const canvas = document.getElementById('ode-err-canvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+  const errors = odeState.errors.slice(0, odeState.stepIdx);
+  if (errors.length < 2) {
+    ctx.fillStyle = '#12121a'; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#666680'; ctx.font = '13px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('Provide exact solution to see error', w / 2, h / 2);
+    return;
+  }
+  const ts = errors.map(e => e.t);
+  const errs = errors.map(e => Math.max(e.err, 1e-16));
+  const logErrs = errs.map(e => Math.log10(e));
+
+  const xMin = Math.min(...ts), xMax = Math.max(...ts);
+  let yMin = Math.min(...logErrs.filter(isFinite)) - 1;
+  let yMax = Math.max(...logErrs.filter(isFinite)) + 1;
+
+  const g = drawGrid(ctx, w, h, xMin, xMax, yMin, yMax, { labelX: 't', labelY: 'log₁₀(error)' });
+
+  ctx.strokeStyle = '#fb7185';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  let started = false;
+  for (let i = 0; i < logErrs.length; i++) {
+    if (!isFinite(logErrs[i])) { started = false; continue; }
+    const px = g.toPixelX(ts[i]), py = g.toPixelY(logErrs[i]);
+    if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+}
+
+// =====================================================================
+// 4. INTERPOLATION
+// =====================================================================
+let interpPoints = [];
+
+function interpDraw() {
+  const canvas = document.getElementById('interp-canvas');
+  const { ctx, w, h } = setupCanvas(canvas);
+
+  // Determine bounds
+  let xMin = -5, xMax = 5, yMin = -3, yMax = 3;
+  if (interpPoints.length > 0) {
+    const xs = interpPoints.map(p => p.x);
+    const ys = interpPoints.map(p => p.y);
+    const xPad = (Math.max(...xs) - Math.min(...xs)) * 0.3 + 1;
+    const yPad = (Math.max(...ys) - Math.min(...ys)) * 0.3 + 1;
+    xMin = Math.min(...xs) - xPad;
+    xMax = Math.max(...xs) + xPad;
+    yMin = Math.min(...ys) - yPad;
+    yMax = Math.max(...ys) + yPad;
+  }
+
+  const g = drawGrid(ctx, w, h, xMin, xMax, yMin, yMax, { labelX: 'x', labelY: 'y' });
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(g.pad.left, g.pad.top, g.pw, g.ph);
+  ctx.clip();
+
+  const sorted = [...interpPoints].sort((a, b) => a.x - b.x);
+  const n = sorted.length;
+
+  if (n >= 2) {
+    const showLagrange = document.getElementById('interp-lagrange').checked;
+    const showNewton = document.getElementById('interp-newton').checked;
+    const showSpline = document.getElementById('interp-spline').checked;
+    const showBasis = document.getElementById('interp-basis').checked;
+
+    // Lagrange polynomial evaluation
+    function lagrange(x) {
+      let y = 0;
+      for (let i = 0; i < n; i++) {
+        let li = 1;
+        for (let j = 0; j < n; j++) {
+          if (i !== j) li *= (x - sorted[j].x) / (sorted[i].x - sorted[j].x);
+        }
+        y += sorted[i].y * li;
+      }
+      return y;
+    }
+
+    // Newton divided differences
+    function newtonInterp(x) {
+      const dd = sorted.map(p => p.y);
+      const coefs = [dd[0]];
+      for (let k = 1; k < n; k++) {
+        for (let i = n - 1; i >= k; i--) {
+          dd[i] = (dd[i] - dd[i-1]) / (sorted[i].x - sorted[i-k].x);
+        }
+        coefs.push(dd[k]);
+      }
+      let y = coefs[n-1];
+      for (let i = n - 2; i >= 0; i--) {
+        y = y * (x - sorted[i].x) + coefs[i];
+      }
+      return y;
+    }
+
+    // Cubic spline
+    function cubicSpline(xVal) {
+      if (n < 2) return 0;
+      const xs = sorted.map(p => p.x);
+      const ys = sorted.map(p => p.y);
+      const nn = n - 1;
+      const h = [];
+      for (let i = 0; i < nn; i++) h.push(xs[i+1] - xs[i]);
+
+      // Solve for M (second derivatives)
+      const A = Array(n).fill(0).map(() => Array(n).fill(0));
+      const b = Array(n).fill(0);
+      A[0][0] = 1; A[nn][nn] = 1; // natural spline
+      for (let i = 1; i < nn; i++) {
+        A[i][i-1] = h[i-1];
+        A[i][i] = 2 * (h[i-1] + h[i]);
+        A[i][i+1] = h[i];
+        b[i] = 6 * ((ys[i+1] - ys[i]) / h[i] - (ys[i] - ys[i-1]) / h[i-1]);
+      }
+      // Solve tridiagonal
+      const M = solveTridiag(A, b, n);
+
+      // Find interval
+      let idx = 0;
+      for (let i = 0; i < nn; i++) {
+        if (xVal >= xs[i] && xVal <= xs[i+1]) { idx = i; break; }
+        if (i === nn - 1) idx = i;
+      }
+      if (xVal < xs[0]) idx = 0;
+      if (xVal > xs[nn]) idx = nn - 1;
+
+      const hi = h[idx];
+      const a1 = (xs[idx+1] - xVal) / hi;
+      const a2 = (xVal - xs[idx]) / hi;
+      return a1 * ys[idx] + a2 * ys[idx+1] +
+        ((a1*a1*a1 - a1) * M[idx] + (a2*a2*a2 - a2) * M[idx+1]) * hi * hi / 6;
+    }
+
+    function solveTridiag(A, b, n) {
+      const x = b.slice();
+      const aa = Array(n).fill(0);
+      const bb = Array(n).fill(0);
+      const cc = Array(n).fill(0);
+      for (let i = 0; i < n; i++) {
+        if (i > 0) aa[i] = A[i][i-1];
+        bb[i] = A[i][i];
+        if (i < n-1) cc[i] = A[i][i+1];
+      }
+      for (let i = 1; i < n; i++) {
+        const m = aa[i] / bb[i-1];
+        bb[i] -= m * cc[i-1];
+        x[i] -= m * x[i-1];
+      }
+      x[n-1] /= bb[n-1];
+      for (let i = n - 2; i >= 0; i--) {
+        x[i] = (x[i] - cc[i] * x[i+1]) / bb[i];
+      }
+      return x;
+    }
+
+    // Draw curves
+    if (showLagrange) {
+      drawCurve(ctx, g.toPixelX, g.toPixelY, lagrange, xMin, xMax, '#2dd4bf', 2.5);
+    }
+    if (showNewton) {
+      drawCurve(ctx, g.toPixelX, g.toPixelY, newtonInterp, xMin, xMax, '#fbbf24', 2, showLagrange ? [6, 4] : []);
+    }
+    if (showSpline && n >= 3) {
+      drawCurve(ctx, g.toPixelX, g.toPixelY, cubicSpline, sorted[0].x, sorted[n-1].x, '#a78bfa', 2.5);
+    }
+
+    // Basis functions
+    if (showBasis && n >= 2) {
+      const basisColors = ['rgba(45,212,191,0.3)', 'rgba(251,191,36,0.3)', 'rgba(251,113,133,0.3)',
+                          'rgba(167,139,250,0.3)', 'rgba(108,140,255,0.3)', 'rgba(255,255,100,0.3)'];
+      for (let i = 0; i < n && i < 6; i++) {
+        const basis = (x) => {
+          let li = 1;
+          for (let j = 0; j < n; j++) {
+            if (i !== j) li *= (x - sorted[j].x) / (sorted[i].x - sorted[j].x);
+          }
+          return li;
+        };
+        drawCurve(ctx, g.toPixelX, g.toPixelY, basis, xMin, xMax, basisColors[i % basisColors.length], 1.5);
+      }
+    }
+
+    // Legend
+    ctx.font = '11px DM Sans';
+    ctx.textAlign = 'left';
+    let ly = g.pad.top + 16;
+    if (showLagrange) { ctx.fillStyle = '#2dd4bf'; ctx.fillText('Lagrange', g.pad.left + 10, ly); ly += 16; }
+    if (showNewton) { ctx.fillStyle = '#fbbf24'; ctx.fillText('Newton', g.pad.left + 10, ly); ly += 16; }
+    if (showSpline) { ctx.fillStyle = '#a78bfa'; ctx.fillText('Cubic Spline', g.pad.left + 10, ly); ly += 16; }
+    if (showBasis) { ctx.fillStyle = 'rgba(200,200,200,0.5)'; ctx.fillText('Basis Fns', g.pad.left + 10, ly); }
+  }
+
+  // Draw data points
+  for (const p of interpPoints) {
+    ctx.fillStyle = '#fb7185';
+    ctx.beginPath();
+    ctx.arc(g.toPixelX(p.x), g.toPixelY(p.y), 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+
+  // Update log
+  interpUpdateLog();
+}
+
+function interpUpdateLog() {
+  const el = document.getElementById('interp-log');
+  if (interpPoints.length === 0) {
+    el.textContent = 'No points added yet.';
+    return;
+  }
+  let html = '';
+  const sorted = [...interpPoints].sort((a, b) => a.x - b.x);
+  for (let i = 0; i < sorted.length; i++) {
+    html += `P${i}: (<span class="val">${sorted[i].x.toFixed(3)}</span>, <span class="val">${sorted[i].y.toFixed(3)}</span>)\n`;
+  }
+  el.innerHTML = html;
+}
+
+function interpClear() {
+  interpPoints = [];
+  interpDraw();
+}
+
+function interpPresetRunge() {
+  interpPoints = [];
+  const n = 9;
+  for (let i = 0; i < n; i++) {
+    const x = -1 + 2 * i / (n - 1);
+    interpPoints.push({ x, y: 1 / (1 + 25 * x * x) });
+  }
+  interpDraw();
+}
+
+function interpPresetSine() {
+  interpPoints = [];
+  for (let i = 0; i < 7; i++) {
+    const x = -Math.PI + 2 * Math.PI * i / 6;
+    interpPoints.push({ x, y: Math.sin(x) });
+  }
+  interpDraw();
+}
+
+function interpPresetStep() {
+  interpPoints = [
+    { x: -2, y: 0 }, { x: -0.5, y: 0 }, { x: -0.1, y: 0 },
+    { x: 0.1, y: 1 }, { x: 0.5, y: 1 }, { x: 2, y: 1 }
+  ];
+  interpDraw();
+}
+
+function interpPresetQuad() {
+  interpPoints = [];
+  for (let i = 0; i < 5; i++) {
+    const x = -2 + i;
+    interpPoints.push({ x, y: x * x - 1 });
+  }
+  interpDraw();
+}
+
+function interpRungeDemo() {
+  const n = parseInt(document.getElementById('interp-runge-n').value);
+  interpPoints = [];
+  for (let i = 0; i < n; i++) {
+    const x = -1 + 2 * i / (n - 1);
+    interpPoints.push({ x, y: 1 / (1 + 25 * x * x) });
+  }
+  interpDraw();
+}
+
+document.getElementById('interp-runge-n').addEventListener('input', () => {
+  document.getElementById('interp-runge-n-label').textContent = document.getElementById('interp-runge-n').value;
+});
+
+// Canvas click to add/remove points
+function setupInterpCanvas() {
+  const canvas = document.getElementById('interp-canvas');
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    // Convert pixel to data coords
+    const pad = { left: 50, right: 20, top: 20, bottom: 36 };
+    const pw = rect.width - pad.left - pad.right;
+    const ph = rect.height - pad.top - pad.bottom;
+
+    let xMin = -5, xMax = 5, yMin = -3, yMax = 3;
+    if (interpPoints.length > 0) {
+      const xs = interpPoints.map(p => p.x);
+      const ys = interpPoints.map(p => p.y);
+      const xPad = (Math.max(...xs) - Math.min(...xs)) * 0.3 + 1;
+      const yPad = (Math.max(...ys) - Math.min(...ys)) * 0.3 + 1;
+      xMin = Math.min(...xs) - xPad; xMax = Math.max(...xs) + xPad;
+      yMin = Math.min(...ys) - yPad; yMax = Math.max(...ys) + yPad;
+    }
+
+    const x = xMin + (mx - pad.left) / pw * (xMax - xMin);
+    const y = yMax - (my - pad.top) / ph * (yMax - yMin);
+
+    if (mx >= pad.left && mx <= rect.width - pad.right && my >= pad.top && my <= rect.height - pad.bottom) {
+      interpPoints.push({ x, y });
+      interpDraw();
+    }
+  });
+  canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (interpPoints.length === 0) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const pad = { left: 50, right: 20, top: 20, bottom: 36 };
+    const pw = rect.width - pad.left - pad.right;
+    const ph = rect.height - pad.top - pad.bottom;
+
+    let xMin = -5, xMax = 5, yMin = -3, yMax = 3;
+    if (interpPoints.length > 0) {
+      const xs = interpPoints.map(p => p.x);
+      const ys = interpPoints.map(p => p.y);
+      const xPad = (Math.max(...xs) - Math.min(...xs)) * 0.3 + 1;
+      const yPad = (Math.max(...ys) - Math.min(...ys)) * 0.3 + 1;
+      xMin = Math.min(...xs) - xPad; xMax = Math.max(...xs) + xPad;
+      yMin = Math.min(...ys) - yPad; yMax = Math.max(...ys) + yPad;
+    }
+
+    const x = xMin + (mx - pad.left) / pw * (xMax - xMin);
+    const y = yMax - (my - pad.top) / ph * (yMax - yMin);
+
+    // Find nearest point
+    let minDist = Infinity, minIdx = -1;
+    for (let i = 0; i < interpPoints.length; i++) {
+      const dx = interpPoints[i].x - x;
+      const dy = interpPoints[i].y - y;
+      const d = dx * dx + dy * dy;
+      if (d < minDist) { minDist = d; minIdx = i; }
+    }
+    if (minIdx >= 0) {
+      interpPoints.splice(minIdx, 1);
+      interpDraw();
+    }
+  });
+}
+
+// Checkbox changes redraw
+['interp-lagrange', 'interp-newton', 'interp-spline', 'interp-basis'].forEach(id => {
+  document.getElementById(id).addEventListener('change', interpDraw);
+});
+
+// =====================================================================
+// INITIALISATION & RESIZE
+// =====================================================================
+function init() {
+  setupInterpCanvas();
+  rfDraw();
+  // Initial integration compute
+  intCompute();
+}
+
+window.addEventListener('resize', () => {
+  const activeTab = document.querySelector('.tab-content.active');
+  if (activeTab) {
+    const id = activeTab.id;
+    if (id === 'tab-roots') rfDraw();
+    else if (id === 'tab-integration') intDraw();
+    else if (id === 'tab-ode') odeDraw();
+    else if (id === 'tab-interp') interpDraw();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
