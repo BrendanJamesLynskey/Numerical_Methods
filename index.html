@@ -24,8 +24,8 @@ body {
   font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
+  height: 100vh;
+  overflow: hidden;
 }
 header {
   text-align: center;
@@ -502,13 +502,13 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="viz-panel">
-    <div class="card" style="flex:2;">
+    <div class="card" style="display:flex;flex-direction:column;flex:2;min-height:0;">
       <h2>Solution Curve</h2>
-      <canvas id="ode-canvas" height="400"></canvas>
+      <div class="canvas-wrapper" style="flex:2;"><canvas id="ode-canvas"></canvas></div>
     </div>
-    <div class="card" style="flex:1;">
+    <div class="card" style="display:flex;flex-direction:column;flex:1;min-height:0;">
       <h2>Error vs Step</h2>
-      <canvas id="ode-err-canvas" height="200"></canvas>
+      <div class="canvas-wrapper" style="flex:1;"><canvas id="ode-err-canvas"></canvas></div>
     </div>
   </div>
 </div>
@@ -548,9 +548,9 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="viz-panel">
-    <div class="card" style="flex:1;">
+    <div class="card" style="display:flex;flex-direction:column;flex:1;min-height:0;">
       <h2>Interpolation Plot</h2>
-      <canvas id="interp-canvas" height="500"></canvas>
+      <div class="canvas-wrapper" style="flex:1;"><canvas id="interp-canvas"></canvas></div>
     </div>
   </div>
 </div>
@@ -713,11 +713,14 @@ const MathParser = (() => {
 function setupCanvas(canvas) {
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
+  // Guard against zero-size canvases (hidden tabs during layout)
+  const w = Math.max(rect.width, 100);
+  const h = Math.max(rect.height, 60);
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
-  return { ctx, w: rect.width, h: rect.height };
+  return { ctx, w, h };
 }
 
 function drawGrid(ctx, w, h, xMin, xMax, yMin, yMax, options = {}) {
@@ -829,12 +832,13 @@ function switchTab(name) {
   el.style.display = 'flex';
   const tabs = ['roots', 'integration', 'ode', 'interp'];
   document.querySelectorAll('.tab-btn')[tabs.indexOf(name)].classList.add('active');
-  requestAnimationFrame(() => {
+  // Use setTimeout to ensure layout is fully computed before reading canvas dimensions
+  setTimeout(() => {
     if (name === 'roots') rfDraw();
     if (name === 'integration') intDraw();
     if (name === 'ode') odeDraw();
     if (name === 'interp') interpDraw();
-  });
+  }, 50);
 }
 
 // =====================================================================
