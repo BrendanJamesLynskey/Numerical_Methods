@@ -29,7 +29,7 @@ body {
 }
 header {
   text-align: center;
-  padding: 24px 20px 14px;
+  padding: 16px 20px 10px;
   border-bottom: 1px solid var(--border);
   background: linear-gradient(180deg, #14141c 0%, var(--bg) 100%);
 }
@@ -49,7 +49,7 @@ header p { color: var(--muted); margin-top: 5px; font-size: 0.92rem; }
   display: flex;
   justify-content: center;
   gap: 4px;
-  padding: 12px 16px 0;
+  padding: 8px 16px 0;
   background: var(--bg);
 }
 .tab-btn {
@@ -77,15 +77,18 @@ header p { color: var(--muted); margin-top: 5px; font-size: 0.92rem; }
   padding: 14px;
   max-width: 1500px;
   margin: 0 auto;
-  min-height: calc(100vh - 140px);
+  height: calc(100vh - 110px);
+  overflow: hidden;
 }
 .controls-panel {
-  width: 320px;
-  min-width: 300px;
+  width: 280px;
+  min-width: 260px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   flex-shrink: 0;
+  overflow-y: auto;
+  max-height: calc(100vh - 110px);
 }
 .viz-panel {
   flex: 1;
@@ -93,6 +96,19 @@ header p { color: var(--muted); margin-top: 5px; font-size: 0.92rem; }
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.canvas-wrapper {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+.canvas-wrapper canvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
 }
 @media (max-width: 900px) {
   .app-section { flex-direction: column !important; }
@@ -182,7 +198,6 @@ canvas {
   border-radius: 10px;
   background: #12121a;
   display: block;
-  width: 100%;
   cursor: crosshair;
 }
 
@@ -333,13 +348,13 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="viz-panel">
-    <div class="card" style="flex:2;">
+    <div class="card" style="display:flex;flex-direction:column;flex:2;min-height:0;">
       <h2>Function Plot</h2>
-      <canvas id="rf-canvas" height="400"></canvas>
+      <div class="canvas-wrapper" style="flex:2;"><canvas id="rf-canvas"></canvas></div>
     </div>
-    <div class="card" style="flex:1;">
+    <div class="card" style="display:flex;flex-direction:column;flex:1;min-height:0;">
       <h2>Convergence</h2>
-      <canvas id="rf-conv-canvas" height="200"></canvas>
+      <div class="canvas-wrapper" style="flex:1;"><canvas id="rf-conv-canvas"></canvas></div>
     </div>
   </div>
 </div>
@@ -403,13 +418,13 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="viz-panel">
-    <div class="card" style="flex:2;">
+    <div class="card" style="display:flex;flex-direction:column;flex:2;min-height:0;">
       <h2>Integration Visualisation</h2>
-      <canvas id="int-canvas" height="400"></canvas>
+      <div class="canvas-wrapper" style="flex:2;"><canvas id="int-canvas"></canvas></div>
     </div>
-    <div class="card" style="flex:1;">
+    <div class="card" style="display:flex;flex-direction:column;flex:1;min-height:0;">
       <h2>Error vs n (log-log)</h2>
-      <canvas id="int-conv-canvas" height="200"></canvas>
+      <div class="canvas-wrapper" style="flex:1;"><canvas id="int-conv-canvas"></canvas></div>
     </div>
   </div>
 </div>
